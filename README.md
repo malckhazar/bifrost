@@ -1,4 +1,4 @@
 # bifrost
-Programmable communication daemon
+Distributed low-latency messaging bus daemon
 
-Work in progress
+This project is in early (very early) stage.
