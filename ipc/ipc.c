@@ -198,7 +198,7 @@ channel_t* channel_open (char* shm_path, char* sem_path, int required_size, int 
 	chan->owner = owner;
 
 	// create shared memory object
-	key = ftok(shm_path, 'm');
+	key = ftok(shm_path, ftok_app_id);
 	if ((chan->shm = shmget(key, required_size + sizeof(unsigned int), IPC_CREAT | 0660)) == -1)
 	{
 		syslog (LOG_ERR, "%s: failed to create shm object at ''!", __func__, shm_path);
@@ -217,7 +217,7 @@ channel_t* channel_open (char* shm_path, char* sem_path, int required_size, int 
 	chan->size = required_size;
 
 	// create shared semaphore
-	key = ftok(sem_path, 'm');
+	key = ftok(sem_path, ftok_app_id);
 	// semget allocates a set of semaphores.
 	// Unfortunately, there is no way to resize this set, so there will be many sets :(
 	if ((chan->sem = semget(key, 1, IPC_CREAT | 0660)) == -1)
