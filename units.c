@@ -14,7 +14,7 @@ void free_channel_info (gpointer data)
 }
 
 // it's quite safe to use this - if some daemon will constantly respawn, it will have same d-bus-id.
-int last_id = CORE_DAEMON_QUEUE_ID; // core daemon id is always first
+int last_id = BIFROST_DAEMON_QUEUE_ID; // core daemon id is always first
 
 int register_unit (const char* id, unsigned int requested_packet_size, channel_info_t* info)
 {
