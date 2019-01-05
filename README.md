@@ -1,4 +1,4 @@
 # bifrost
-Low-latency distributed messaging bus daemon
+Distributed messaging low-latency bus daemon
 
 This project is in early (very early) stage.
