@@ -201,7 +201,7 @@ channel_t* channel_open (char* shm_path, char* sem_path, int required_size, int 
 	key = ftok(shm_path, ftok_app_id);
 	if ((chan->shm = shmget(key, required_size + sizeof(unsigned int), IPC_CREAT | 0660)) == -1)
 	{
-		syslog (LOG_ERR, "%s: failed to create shm object at ''!", __func__, shm_path);
+		syslog (LOG_ERR, "%s: failed to create shm object at '%s'!", __func__, shm_path);
 		free (chan);
 		return NULL;
 	}

@@ -11,8 +11,12 @@ CFLAGS	= -Wall -Wextra -fPIC -O0 -g -pthread `pkg-config --cflags $(LIBRARIES)`
 LDFLAGS	= -pthread
 LIBS = `pkg-config --libs $(LIBRARIES)`
 
-SOURCES = $(shell ls ./*.c)
-SOURCES += $(shell ls ipc/*.c)
+SOURCES = message.c \
+	  settings.c \
+	  units.c \
+	  ipc/dbus.c \
+	  ipc/ipc.c \
+	  main.c
 OBJECTS = $(SOURCES:.c=.o)
 
 #SOURCES_TEST = test/dn-ipc_test.c
