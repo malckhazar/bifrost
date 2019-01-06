@@ -1,6 +1,8 @@
 #include "message.h"
 #include "syslog.h"
 
+//=================================================================================================
+
 int main (int argc, char**argv)
 {
 	message_t* msg;

@@ -16,7 +16,7 @@ message_t* bifrost_create_message (message_type_t type, unsigned int datasize)
 	int sz = 0;
 
 	if (type == MESSAGE_DATA)		sz = sizeof (data_message_t) - sizeof (char) + datasize;
-	else if (type == MESSAGE_COMMAND)	sz = sizeof (command_t);
+	else if (type == MESSAGE_COMMAND)	sz = sizeof (command_t) - sizeof (char) + datasize;
 //	else if (type == MESSAGE_EVENT)		sz = sizeof (event_t);
 	else {
 		syslog (LOG_ERR, "%s unimplemented message type requested", __func__);
@@ -28,7 +28,7 @@ message_t* bifrost_create_message (message_type_t type, unsigned int datasize)
 	
 	msg->message_type = type;
 	msg->message_size = sz;
-	if (type == MESSAGE_DATA)
+	if (type == MESSAGE_DATA || type == MESSAGE_COMMAND)
 		((data_message_t*)msg)->buffer_size = datasize;
 
 	return msg;

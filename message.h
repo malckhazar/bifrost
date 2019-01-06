@@ -32,8 +32,10 @@ typedef struct message_event_t {
 } message_event_t;
 */
 
+
 /* create message of desired type
-	datasize is required size for a buffer in message with MESSAGE_DATA type. Others just ignore it.
+	datasize is required size for a message buffer and for command arguments buffer.
+	Others just ignore it.
 */
 message_t* bifrost_create_message (message_type_t type, unsigned int datasize);
 /* push message to bus */
@@ -42,6 +44,8 @@ void bifrost_push_message (message_t* msg);
 message_t* bifrost_pop_message ();
 /* clear bus */
 void bifrost_clear_bus ();
+
+//----------------------------------------------------------------------------------------------------
 
 // data message
 typedef struct data_message_t {
@@ -56,10 +60,13 @@ typedef struct data_message_t {
 	char 	buf[1];		// actually, this buffer will be buffer_size length
 } data_message_t;
 
+//----------------------------------------------------------------------------------------------------
+
 // command
 typedef enum command_type_t {
 	BIFROST_CONNECT,
-	BIFROST_DISCONNECT
+	BIFROST_DISCONNECT,
+	BIFROST_SET_MESSAGE_BATCH_SIZE
 } command_type_t;
 
 typedef struct command_t {
@@ -69,5 +76,7 @@ typedef struct command_t {
 	message_t*	next;
 
 	command_type_t command_type;
+	unsigned int buffer_size;
+	char	args[1];	// arguments buffer
 } command_t;
 

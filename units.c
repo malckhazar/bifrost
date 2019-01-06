@@ -83,9 +83,9 @@ void unregister_unit (const char* id)
 
 void destroy_unit_list ()
 {
-	g_dataset_destroy (&unit_list);
+	g_object_unref (unit_list);
 	unit_list = NULL;
-	syslog (LOG_DEBUG, "dataset destroyed");
+	syslog (LOG_DEBUG, "datalist destroyed");
 }
 
 const GData* get_units ()
