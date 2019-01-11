@@ -1,4 +1,0 @@
-/* Bifrost address book
-*/
-
-

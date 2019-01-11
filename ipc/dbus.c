@@ -5,7 +5,7 @@
 #include <glib.h>
 #include <gio/gio.h>
 
-#include "../units.h"
+#include "../message.h"
 #include "../settings.h"
 
 const char *version = "0.1";
@@ -24,9 +24,6 @@ const char *server_introspection_xml =
 	"      <annotation name='org.gtk.GDBus.Annotation' value='ChannelRequest'/>"
 	"      <arg type='s' name='id' direction='in'/>"
 	"      <arg type='u' name='packetSize' direction='in'/>"
-	"      <arg type='i' name='messgeQueueId' direction='out'/>"
-	"      <arg type='s' name='shmPath' direction='out'/>"
-	"      <arg type='s' name='semPath' direction='out'/>"
 	"    </method>"
 	/* unit requests to free allocated channel
 	*/
@@ -34,10 +31,19 @@ const char *server_introspection_xml =
 	"      <annotation name='org.gtk.GDBus.Annotation' value='FreeResources'/>"
 	"      <arg type='s' name='id' direction='in'/>"
 	"    </method>"
-	/* signal emitted when core daemon is going to shutdown -- all daemons MUST disconnect from their mq&shm!
+	/* this signal is emitted when bifrost is going to shutdown -- all daemons MUST disconnect from their mq&shm!
 	*/
 	"    <signal name='Shutdown'>"
 	"      <annotation name='org.gtk.GDBus.Annotation' value='Onsignal'/>"
+	"    </signal>"
+	/* this signal is emitted when bifrost have created a channel
+	*/
+	"    <signal name='ChannelOpen'>"
+	"      <annotation name='org.gtk.GDBus.Annotation' value='Onsignal'/>"
+	"      <arg type='s' name='id' direction='in'/>"
+	"      <arg type='i' name='queueId' direction='in'/>"
+	"      <arg type='s' name='shmName' direction='in'/>"
+	"      <arg type='s' name='semName' direction='in'/>"
 	"    </signal>"
 	// version property
 	"    <property type='s' name='Version' access='read'>"
@@ -257,6 +263,7 @@ static void* dbus_worker (void* arg)
 		syslog (LOG_ERR, "failed to own name "DBUS_NAME);
 
 	g_dbus_node_info_unref (introspection_data);
+
 	if (error)
 		g_error_free (error);
 
@@ -277,46 +284,43 @@ static void server_message_handler (GDBusConnection       *connection,
 {
 	if (g_strcmp0 (method_name, "RegisterUnit") == 0)
 	{
-		char* id = NULL;
+		char* name = NULL;
 		unsigned int requested_packet_size = 0;
-		int result = 0;
-		channel_info_t info = { 0, NULL };
+		char* shm_name = NULL;
+		char* sem_name = NULL;
+		command_t* message = NULL;
+		bifrost_register_unit_command_t* command = NULL;
+		int len;
 
 		// get arguments
 		syslog (LOG_DEBUG, "processing %s call", method_name);
 
-		g_variant_get (parameters, "(&su)", &id, &requested_packet_size);
-		result = register_unit (id, requested_packet_size, &info);
+		g_variant_get (parameters, "(&su)", &name, &requested_packet_size);
 
-		if (result != 0)
+		len = sizeof(bifrost_register_unit_command_t) + strlen (name) + 1;
+
+		if (!(message = bifrost_create_message (MESSAGE_COMMAND, len)))
 		{
-			syslog (LOG_ERR, "Failed to register unit id %s, requested %d bytes",
-					sender, requested_packet_size);
+			syslog (LOG_ERR, "Failed to allocate %u bytes for unit [%s] registration", len, sender);
 			// return error
-			if (result == -2)
-				g_dbus_method_invocation_return_error (invocation,
-							      G_DBUS_ERROR,
-	                                                      G_DBUS_ERROR_NO_MEMORY,
-	                                                      "Failed to allocate requested resources!");
-			else if (result == -1)
-				g_dbus_method_invocation_return_error (invocation,
-							      G_DBUS_ERROR,
-	                                                      G_DBUS_ERROR_INVALID_ARGS,
-	                                                      "Invalid arguments");
-
-			g_dbus_method_invocation_return_dbus_error (invocation,
-								"org.malckhazar.UnknownError",
-								"Unknown error occured on unit registration!");
+			g_dbus_method_invocation_return_error (invocation,
+						      G_DBUS_ERROR,
+                                                      G_DBUS_ERROR_NO_MEMORY,
+                                                      "Failed to allocate requested resources!");
 			return;
 		}
-		syslog (LOG_DEBUG, "register_unit returned: '%d', '%s', '%s'", info.queue_id, info.shm_name, info.sem_name);
+
+		command = message->args;
+		command->packet_size = requested_packet_size;
+		strcpy(command->name, name);
+
+		// send command to bus
+		bifrost_push_message (message);
+
+		syslog (LOG_DEBUG, "requested unit [%s] registration ", name);
 
 		// response
-		g_dbus_method_invocation_return_value (invocation,
-							g_variant_new ("(i&s&s)",
-									info.queue_id,
-									info.shm_name ? info.shm_name : "",
-									info.sem_name ? info.sem_name : ""));
+		g_dbus_method_invocation_return_value (invocation, g_variant_new ("()");
 
 		return;
 	} else if (g_strcmp0 (method_name, "UnregisterUnit") == 0)
@@ -331,8 +335,7 @@ static void server_message_handler (GDBusConnection       *connection,
 	syslog (LOG_WARNING, "Unhandled method call: %s", method_name);
 }
 
-static GVariant*
-server_message_get (GDBusConnection  *connection,
+static GVariant* server_message_get (GDBusConnection  *connection,
                      const gchar      *sender,
                      const gchar      *object_path,
                      const gchar      *interface_name,
@@ -349,14 +352,13 @@ server_message_get (GDBusConnection  *connection,
 		ret = g_variant_new_string (version);
 	} else if (g_strcmp0 (property_name, "QueuePath") == 0)
 	{
-		ret = g_variant_new_string (settings.queue_path);
+		ret = g_variant_new_string (bifrost_settings.queue_path);
 	}
 
 	return ret;
 }
 
-static gboolean
-server_message_set (GDBusConnection  *connection,
+static gboolean server_message_set (GDBusConnection  *connection,
                      const gchar      *sender,
                      const gchar      *object_path,
                      const gchar      *interface_name,

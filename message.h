@@ -1,10 +1,16 @@
 /* Basic message declarations. Messages can be chained similar to lists in linux kernel.
 */
 
+typedef struct bifrost_address_t
+{
+	int ip;		// 0 if local; otherwise - LAN ip
+	int id;		// local id
+} bifrost_address_t;
+
+
 typedef enum {
 	MESSAGE_DATA,		// routed data
-	MESSAGE_COMMAND,	// command to bifrost
-	MESSAGE_EVENT		// event from d-bus -- currently disabled
+	MESSAGE_COMMAND		// command to bifrost
 } message_type_t;
 
 // base message
@@ -13,24 +19,6 @@ typedef struct message_t {
 	unsigned int message_size;
 	struct message_t* next;
 } message_t;
-
-/* I'm not sure, do I really need this?
-// event
-typedef enum event_type_t {
-	EVENT_APPEARED,
-	EVENT_DISAPPEARED
-} event_type_t;
-
-typedef struct message_event_t {
-	// common header
-	message_type_t 	message_type;
-	unsigned int 	size;
-	message_t*	next;
-
-	event_type_t event_type;
-	char* name;
-} message_event_t;
-*/
 
 
 /* create message of desired type
@@ -45,7 +33,7 @@ message_t* bifrost_pop_message ();
 /* clear bus */
 void bifrost_clear_bus ();
 
-//----------------------------------------------------------------------------------------------------
+//=================================================================================================
 
 // data message
 typedef struct data_message_t {
@@ -54,19 +42,22 @@ typedef struct data_message_t {
 	unsigned int message_size;
 	message_t*	next;
 
-	int	src_id;
-	int	dest_id;
+	bifrost_address_t src_id;
+	bifrost_address_t dest_id;
 	unsigned int buffer_size;
-	char 	buf[1];		// actually, this buffer will be buffer_size length
+	char 	buf[0];		// actually, this buffer will be buffer_size length
 } data_message_t;
 
 //----------------------------------------------------------------------------------------------------
 
-// command
+// command message
 typedef enum command_type_t {
-	BIFROST_CONNECT,
+	BIFROST_CONNECT = 1,
 	BIFROST_DISCONNECT,
-	BIFROST_SET_MESSAGE_BATCH_SIZE
+	BIFROST_SET_MESSAGE_BATCH_SIZE,
+	BIFROST_REGISTER_UNIT,
+	BIFROST_REGISTER_REMOTE_UNIT,
+	BIFROST_UNREGISTER_UNIT
 } command_type_t;
 
 typedef struct command_t {
@@ -77,6 +68,21 @@ typedef struct command_t {
 
 	command_type_t command_type;
 	unsigned int buffer_size;
-	char	args[1];	// arguments buffer
+	char	args[0];	// arguments buffer
 } command_t;
+
+//====================================================================================================
+// command structures
+
+typedef struct bifrost_register_unit_command_t {
+	int packet_size;	// shared memory size request
+	char name[0];		// unit name
+} bifrost_register_remote_unit_command_t;
+
+typedef struct bifrost_register_remote_unit_command_t {
+	int ip;
+	int id;
+	char name[0];
+} bifrost_register_unit_command_t;
+
 

@@ -3,6 +3,15 @@
 
 //=================================================================================================
 
+/*
+void main_loop ()
+{
+	receive_from_network ();
+	read_channels ();
+	process_bus_messages ();
+}
+*/
+
 int main (int argc, char**argv)
 {
 	message_t* msg;
@@ -20,6 +29,10 @@ int main (int argc, char**argv)
 	msg = bifrost_create_message (MESSAGE_EVENT, 0);
 
 	bifrost_clear_bus ();
+
+/*
+	broker_uninit();
+*/
 
 	closelog ();
 	return 0;

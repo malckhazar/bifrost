@@ -2,7 +2,9 @@
 
 void settings_init ()
 {
-	settings.queue_path = "/tmp/mq";
+	bifrost_settings.queue_path = "/tmp/mq";
+	bifrost_settings.message_batch_size = 5;
+	bifrost_settings.channel_prefix = "/tmp/bifrost/";
 }
 
 void settings_free ()

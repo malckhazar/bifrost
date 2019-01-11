@@ -3,7 +3,9 @@
 
 static struct {
 	char* queue_path;
-} settings;
+	unsigned int message_batch_size;
+	char* channel_prefix;
+} bifrost_settings;
 
 void settings_init ();
 void settings_free ();

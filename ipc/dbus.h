@@ -27,3 +27,14 @@
 int bifrost_dbus_start_server ();
 void bifrost_dbus_stop_server ();
 
+typedef enum signal_type_t {
+	BIFROST_SIGNAL_SHUTDOWN = 0,
+	BIFROST_SIGNAL_CHANNEL_REGISTERED
+} signal_type_t;
+
+/* signal arguments:
+		BIFROST_SIGNAL_SHUTDOWN: (none)
+		BIFROST_SIGNAL_CHANNEL_REGISTERED: name, queue id, shm path, sem path
+*/
+void bifrost_dbus_emit_signal (signal_type_t signal_type, ...);
+
